@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SecureTunnel.Connect/SecureTunnel.Connect.csproj" />
+    <Project Path="src/SecureTunnel.Client.Core/SecureTunnel.Client.Core.csproj" />
+    <Project Path="src/SecureTunnel.Client.Agent/SecureTunnel.Client.Agent.csproj" />
+    <Project Path="src/SecureTunnel.Client.Infrastructure/SecureTunnel.Client.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/SecureTunnel.Client.Core.Tests/">
+    <Project Path="tests/SecureTunnel.Client.Core.Tests/SecureTunnel.Client.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/SecureTunnel.Client.Agent.Tests/">
+    <Project Path="tests/SecureTunnel.Client.Agent.Tests/SecureTunnel.Client.Agent.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/SecureTunnel.Client.Infrastructure.Tests/">
+    <Project Path="tests/SecureTunnel.Client.Infrastructure.Tests/SecureTunnel.Client.Infrastructure.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/SecureTunnel.Client.Connect.Tests/">
+    <Project Path="tests/SecureTunnel.Client.Connect.Tests/SecureTunnel.Client.Connect.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/SecureTunnel.Client.TestSupport/">
+    <Project Path="tests/SecureTunnel.Client.TestSupport/SecureTunnel.Client.TestSupport.csproj" />
+  </Folder>
+</Solution>

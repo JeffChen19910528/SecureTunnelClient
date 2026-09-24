@@ -1,0 +1,35 @@
+<Project>
+
+  <!--
+    Shared version for all projects in this solution, read by
+    deploy/package.ps1 to produce versioned packaging artifacts. This is
+    pre-1.0 prototype software (see README.md / docs/roadmap.md) - the
+    version number tracks completed phases (0.6.0 = through Phase C6),
+    not a production release.
+  -->
+  <PropertyGroup>
+    <Version>0.6.0</Version>
+    <InformationalVersion>0.6.0-c6-standalone-client</InformationalVersion>
+  </PropertyGroup>
+
+  <!--
+    Without this, the Roslyn compiler embeds the local, developer-machine
+    absolute path to the .pdb file (e.g. "C:\Users\<name>\...\obj\...") in
+    every compiled assembly's CodeView debug directory - a real finding
+    from Phase C6 packaging (deploy/package.ps1's security check caught
+    it). ContinuousIntegrationBuild activates Roslyn's deterministic
+    /pathmap substitution so published binaries carry no developer-machine
+    path. See docs/c6-packaging-report.md.
+  -->
+  <PropertyGroup>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <!--
+      ContinuousIntegrationBuild alone only activates SourceLink's PathMap
+      generation when a SourceLink package is referenced (none is, here).
+      Set PathMap explicitly so the compiler substitutes the repo root in
+      every embedded PDB path, regardless of SourceLink.
+    -->
+    <PathMap>$(MSBuildThisFileDirectory)=/build/</PathMap>
+  </PropertyGroup>
+
+</Project>

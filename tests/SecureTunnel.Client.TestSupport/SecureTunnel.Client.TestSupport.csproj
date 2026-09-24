@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SecureTunnel.Client.TestSupport</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SecureTunnel.Client.Core\SecureTunnel.Client.Core.csproj" />
+    <ProjectReference Include="..\..\src\SecureTunnel.Client.Infrastructure\SecureTunnel.Client.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

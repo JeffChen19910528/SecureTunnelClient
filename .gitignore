@@ -1,0 +1,52 @@
+# Secrets / keys - never commit real WireGuard keys or imported configs
+*.key
+*.pem
+*.p12
+*.pfx
+**/keys/
+**/secrets/
+.env
+*.env
+!.env.example
+*.conf
+!**/*.example.conf
+
+# Real client configuration - keep only .example variants
+config/*.json
+config/*.yaml
+!config/*.example.json
+!config/*.example.yaml
+
+# Locally stored encrypted client configuration (DPAPI blobs)
+*.stc
+
+# Logs
+*.log
+logs/
+
+# Backups
+*.tar.gz
+*.zip
+
+# .NET build artifacts
+bin/
+obj/
+publish/
+artifacts/
+*.user
+*.suo
+
+# Test / coverage output
+TestResults/
+*.trx
+coverage/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
+.idea/
+
+# Claude Code local session/recovery artifacts
+.claude_recovery/
