@@ -51,9 +51,13 @@ Thumbs.db
 # Claude Code local session/recovery artifacts
 .claude_recovery/
 
-# Internal dev-only docs / c7 environment tooling (not needed on GitHub)
+# Internal dev-only docs / phase reports / environment tooling (not needed on GitHub)
 CONTRIBUTING.md
+docs/c4-*.md
+docs/c5-*.md
+docs/c6-*.md
 docs/c7-*.md
+docs/final-client-closeout-report.md
 deploy/*C7*
 deploy/*c7*
 deploy/tests/*C7*
