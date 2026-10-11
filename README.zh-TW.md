@@ -29,7 +29,7 @@ SecureTunnel 私有資源 VPN 存取平台的 Windows 用戶端。使用者可�
 | 需要系統管理員權限 | Agent 沒有以管理員身分執行。 |
 | 一直停在「等待握手」 | Endpoint／埠錯誤、UDP 被擋，或 Gateway 沒有登錄你的公鑰。 |
 
-**驗證狀態**：已用內建引擎對真實 Gateway（Linux 上的 WireGuard + nftables）實測：握手成功、已授權資源 HTTP 200、未授權資源被擋、中斷後存取被切斷且虛擬網卡被移除。尚未實測：以 `install-service.ps1` 安裝成 Windows 服務（實測時是在管理員主控台執行 Agent）、手動操作 WPF 視窗、WiX MSI。
+**驗證狀態**：已用內建引擎對真實 Gateway（Linux 上的 WireGuard + nftables）實測：握手成功、已授權資源 HTTP 200、未授權資源被擋、中斷後存取被切斷且虛擬網卡被移除。也已用 `deploy\install-service.ps1` 把 Agent 安裝成 `SecureTunnelAgent` Windows 服務（執行於 `C:\Program Files\SecureTunnel\Agent`）重測，結果相同。尚未實測：手動操作 WPF 視窗、WiX MSI。
 
 ## 解決什麼問題
 

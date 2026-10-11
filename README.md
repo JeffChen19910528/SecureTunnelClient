@@ -4,7 +4,7 @@
 
 Windows client for the SecureTunnel private-resource VPN access platform. Lets a user import a Gateway-issued WireGuard configuration, store it securely, and connect to a SecureTunnel Gateway.
 
-> **Status: verified end to end.** A Windows client running the built-in WireGuard engine connected to a real SecureTunnel Gateway (WireGuard + nftables on Linux): handshake completed, the authorized resource was reachable (HTTP 200), an unauthorized resource was blocked, and after Disconnect access was cut off and the virtual adapter removed. Not yet exercised: installing the Agent as a Windows Service with `deploy\install-service.ps1` (the Agent was run from an elevated console), the WPF window driven by hand, and the WiX MSI.
+> **Status: verified end to end.** A Windows client running the built-in WireGuard engine connected to a real SecureTunnel Gateway (WireGuard + nftables on Linux): handshake completed, the authorized resource was reachable (HTTP 200), an unauthorized resource was blocked, and after Disconnect access was cut off and the virtual adapter removed. This was repeated with the Agent installed as the `SecureTunnelAgent` Windows Service via `deploy\install-service.ps1` (running from `C:\Program Files\SecureTunnel\Agent`). Not yet exercised: the WPF window driven by hand and the WiX MSI.
 
 ## Built-in WireGuard engine (no separate install)
 
