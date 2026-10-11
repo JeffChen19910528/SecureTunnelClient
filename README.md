@@ -4,7 +4,37 @@
 
 Windows client for the SecureTunnel private-resource VPN access platform. Lets a user import a Gateway-issued WireGuard configuration, store it securely, and connect to a SecureTunnel Gateway.
 
-> This repository has completed a final closeout audit through **Phase C7-ENV: Real Windows Acceptance Environment Preparation** - a complete `[Interface]`+`[Peer]` configuration model, a hardened Named Pipe/Worker Service boundary, a connection engine that verifies interface/handshake state, a usable WPF shell, standalone-client hardening via test doubles, and a repeatable local packaging pipeline. Phase C7 attempted real elevated acceptance testing; the user declined to grant elevation/WireGuard, so that phase remains **Blocked** for its primary objective, though it produced real (non-simulated) evidence that the data-directory ACL and elevation requirements work as documented, and found+fixed a real test-flakiness defect. Phase C7-ENV does **not** re-attempt C7 - it builds and real-executes a non-destructive readiness probe, a manual elevated-setup guide, and a read-only evidence-collection harness so a future elevated rerun can proceed efficiently; it does not itself constitute real acceptance. The closeout audit re-executed every build/test/packaging/readiness command and found the repository's status **DEVELOPMENT COMPLETE / LOCALLY VERIFIED / RELEASE BLOCKED** - see `docs/final-client-closeout-report.md`. There is still no working end-to-end VPN connection: no real Windows Service has been installed, and no real `wireguard.exe` connectivity has been tested - see `docs/roadmap.md`, `docs/c7-acceptance-report.md`, and `docs/c7-environment-readiness.md`.
+> **Status: verified end to end.** A Windows client running the built-in WireGuard engine connected to a real SecureTunnel Gateway (WireGuard + nftables on Linux): handshake completed, the authorized resource was reachable (HTTP 200), an unauthorized resource was blocked, and after Disconnect access was cut off and the virtual adapter removed. Not yet exercised: installing the Agent as a Windows Service with `deploy\install-service.ps1` (the Agent was run from an elevated console), the WPF window driven by hand, and the WiX MSI.
+
+## Built-in WireGuard engine (no separate install)
+
+The Agent now bundles `wireguard.dll` (wireguard-nt 0.10.1, amd64, see `src/SecureTunnel.Client.Agent/native/win-x64/WIREGUARD-NT-LICENSE.txt`) and drives it in-process, so **WireGuard for Windows does not need to be installed**. The virtual network adapter driver is inside that DLL; the Agent (a Windows Service running elevated) creates the adapter on Connect and removes it on Disconnect or if the Agent exits. IP address, routes and DNS are applied with the OS-provided `netsh.exe`.
+
+- Default engine: embedded. To use an installed WireGuard for Windows instead, set `Tunnel__Engine=WireGuardExe` for the service.
+- Limits: 64-bit Windows only; `AllowedIPs` of `0.0.0.0/0` / `::/0` (full tunnel) are rejected for now - list the protected networks instead.
+- Verified: struct layout and status mapping by unit tests, and the DLL loads and resolves on this machine. **Not yet verified end to end against a Gateway**, because that needs an elevated session (adapter creation returns Win32 error 5 without it).
+
+## Usage
+
+**What you need**: 64-bit Windows 10/11, the .NET 10 runtime, and a WireGuard client configuration issued by your Gateway (`.conf`). You do **not** need to install WireGuard for Windows.
+
+1. **Start the Agent (administrator, once per boot).** The Agent creates the virtual network adapter, so it must be elevated.
+   - Installed as a service: `.\deploy\package.ps1`, then in an elevated PowerShell `.\deploy\install-service.ps1 -ExecutablePath "<path>\SecureTunnel.Client.Agent.exe"` and `Start-Service SecureTunnelAgent`.
+   - Just trying it out: in an elevated PowerShell run `SecureTunnel.Client.Agent.exe` and keep the window open.
+2. **Run SecureTunnel Connect** (normal user, no elevation). Import the `.conf` file; the summary (gateway, address, allowed networks) is shown. The private key is stored encrypted (DPAPI) by the Agent and never shown again.
+3. **Connect.** The state goes Connecting -> Awaiting handshake -> **Connected**. "Connected" appears only after a real WireGuard handshake.
+4. **Use the protected resources** (for example `http://10.20.0.5:8443/`). Only networks listed in `AllowedIPs` go through the tunnel; the Gateway still enforces which resources you may reach.
+5. **Disconnect** when done. This removes the virtual adapter and its routes. Closing the app does not disconnect; stopping the Agent does.
+
+Configuration rules: `AllowedIPs` must list the protected networks (a full tunnel `0.0.0.0/0` is rejected); `Endpoint` must be reachable over UDP from this PC.
+
+| Message | Meaning / fix |
+|---|---|
+| "service is not running" | Start the Agent (step 1). |
+| Access denied | Use an Agent built after the Named Pipe ACL fix (older builds blocked every user on the pipe). |
+| "built-in WireGuard engine is missing" | `wireguard.dll` must sit next to the Agent exe; 64-bit Windows only. |
+| "Administrator permission is required" | The Agent is not elevated. |
+| Stays at "Awaiting handshake" | Wrong endpoint/port, UDP blocked, or the Gateway does not know your public key. |
 
 ## What problem this solves
 
@@ -51,7 +81,7 @@ Full diagram and rationale: `docs/architecture.md`.
 - [x] Real Windows acceptance environment tooling (Phase C7-ENV): a non-destructive readiness probe (`deploy/check-c7-environment.ps1`, real-executed - 13/16 READY, 3 NOT READY on this machine), a sanitized read-only evidence harness (`deploy/collect-c7-evidence.ps1`), a manual elevated-setup guide, and 16/16 real Pester tests covering the new tooling (which themselves found and fixed two real PowerShell defects, including a deny-only-Administrators-token detection bug) - see `docs/c7-environment-readiness.md`. **Does not replace real C7 acceptance**, which remains Blocked.
 - [ ] Actually-installed Windows Service - **Blocked** (no elevated access in this environment; see `docs/windows-service-installation.md`)
 - [ ] Cross-identity Named Pipe access-denied test - **Blocked** (no second Windows identity available)
-- [ ] Real WireGuard connectivity - **Blocked / Not Tested** (no WireGuard installed; see `docs/wireguard-connection-lifecycle.md`)
+- [x] Real WireGuard connectivity - verified against a real Gateway with the built-in engine (see Usage); a Named Pipe ACL bug that locked out every user was fixed along the way
 - [ ] Tray icon / file dialog / clipboard UI automation - **Blocked** (requires an interactive Windows session)
 - [ ] Production installer (WiX MSI) - **Deferred**, evaluated and recommended, not built - see `docs/installer-technology-assessment.md`
 

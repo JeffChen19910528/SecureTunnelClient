@@ -39,10 +39,18 @@ public static class PipeSecurityFactory
             PipeAccessRights.ReadWrite,
             AccessControlType.Allow));
 
+        // The service identity and administrators keep full control. A Deny for Everyone (World) must NOT be
+        // used: Deny ACEs win over Allow ACEs, so it also locks out BUILTIN\Users and nobody could connect.
+        // Everyone not explicitly allowed above is already denied by the absence of an Allow rule.
         security.AddAccessRule(new PipeAccessRule(
-            new SecurityIdentifier(WellKnownSidType.WorldSid, domainSid: null),
+            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, domainSid: null),
             PipeAccessRights.FullControl,
-            AccessControlType.Deny));
+            AccessControlType.Allow));
+
+        security.AddAccessRule(new PipeAccessRule(
+            new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, domainSid: null),
+            PipeAccessRights.FullControl,
+            AccessControlType.Allow));
 
         security.AddAccessRule(new PipeAccessRule(
             new SecurityIdentifier(WellKnownSidType.AnonymousSid, domainSid: null),

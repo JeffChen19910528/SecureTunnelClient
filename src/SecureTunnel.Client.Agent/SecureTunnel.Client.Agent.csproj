@@ -14,6 +14,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- wireguard-nt 0.10.1 (amd64), redistributed under native\win-x64\WIREGUARD-NT-LICENSE.txt; only the public wireguard.h API is used. -->
+    <Content Include="native\win-x64\wireguard.dll" Link="wireguard.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="native\win-x64\WIREGUARD-NT-LICENSE.txt" Link="WIREGUARD-NT-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
   </ItemGroup>

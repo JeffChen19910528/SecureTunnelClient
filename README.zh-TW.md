@@ -7,6 +7,30 @@ SecureTunnel 私有資源 VPN 存取平台的 Windows 用戶端。使用者可�
 > **專案狀態：開發完成 / 本機驗證完成 / 尚不可正式發行（DEVELOPMENT COMPLETE / LOCALLY VERIFIED / RELEASE BLOCKED）。**
 > 目前版本為 `0.6.0`，屬於 1.0 之前的原型軟體。尚未安裝過真正的 Windows Service，也尚未以真實的 `wireguard.exe` 測試過端對端連線，因此**還沒有可實際運作的端對端 VPN 連線**。詳見 [`docs/roadmap.md`](docs/roadmap.md)。
 
+## 使用說明
+
+**需求**：64 位元 Windows 10/11、.NET 10 執行階段，以及 Gateway 核發的 WireGuard 用戶端設定檔（`.conf`）。**不需要**另外安裝 WireGuard for Windows。
+
+1. **啟動 Agent（需系統管理員，每次開機一次）**。Agent 要建立虛擬網卡，所以必須提升權限。
+   - 安裝成服務：`.\deploy\package.ps1`，再於管理員 PowerShell 執行 `.\deploy\install-service.ps1 -ExecutablePath "<路徑>\SecureTunnel.Client.Agent.exe"` 與 `Start-Service SecureTunnelAgent`。
+   - 只是試用：在管理員 PowerShell 執行 `SecureTunnel.Client.Agent.exe`，並保持視窗開啟。
+2. **執行 SecureTunnel Connect**（一般使用者即可）。匯入 `.conf`，畫面會顯示摘要（Gateway、位址、允許網段）。私鑰由 Agent 以 DPAPI 加密保存，之後不會再顯示。
+3. **連線**。狀態依序為 連線中 -> 等待握手 -> **已連線**；只有真的完成 WireGuard 握手才會顯示「已連線」。
+4. **存取受保護資源**（例如 `http://10.20.0.5:8443/`）。只有 `AllowedIPs` 列出的網段會走 VPN，能連哪些資源仍由 Gateway 決定。
+5. **用完請中斷連線**，會移除虛擬網卡與路由。關閉 App 不會中斷連線，停止 Agent 才會。
+
+設定規則：`AllowedIPs` 請列出受保護網段（不支援 `0.0.0.0/0` 全流量）；`Endpoint` 必須能從這台電腦以 UDP 連到。
+
+| 訊息 | 說明 / 處理 |
+|---|---|
+| 服務未執行 | 先啟動 Agent（步驟 1）。 |
+| 存取被拒 | 請使用修正 Named Pipe 權限後建置的 Agent（舊版會擋掉所有使用者）。 |
+| 內建 WireGuard 引擎遺失 | `wireguard.dll` 必須與 Agent 執行檔同資料夾；僅支援 64 位元 Windows。 |
+| 需要系統管理員權限 | Agent 沒有以管理員身分執行。 |
+| 一直停在「等待握手」 | Endpoint／埠錯誤、UDP 被擋，或 Gateway 沒有登錄你的公鑰。 |
+
+**驗證狀態**：已用內建引擎對真實 Gateway（Linux 上的 WireGuard + nftables）實測：握手成功、已授權資源 HTTP 200、未授權資源被擋、中斷後存取被切斷且虛擬網卡被移除。尚未實測：以 `install-service.ps1` 安裝成 Windows 服務（實測時是在管理員主控台執行 Agent）、手動操作 WPF 視窗、WiX MSI。
+
 ## 解決什麼問題
 
 SecureTunnel 的產品原則是：*只有透過 SecureTunnel Gateway 連線、且持有已授權 Peer 設定檔的使用者，才能存取 Gateway 政策所允許的受保護資源。*

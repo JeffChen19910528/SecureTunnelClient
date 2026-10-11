@@ -8,6 +8,7 @@ using SecureTunnel.Client.Core.WireGuard;
 using SecureTunnel.Client.Infrastructure.Configuration;
 using SecureTunnel.Client.Infrastructure.Storage;
 using SecureTunnel.Client.Infrastructure.WireGuard;
+using SecureTunnel.Client.Infrastructure.WireGuard.Embedded;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -20,7 +21,17 @@ builder.Services.AddWindowsService(options => options.ServiceName = "SecureTunne
 builder.Services.AddSingleton<IClientConfigurationParser, WireGuardConfigTextParser>();
 builder.Services.AddSingleton<IClientConfigurationStore, DpapiClientConfigurationStore>();
 builder.Services.AddSingleton<IProcessRunner, WireGuardProcessRunner>();
-builder.Services.AddSingleton<IWireGuardClientService, WireGuardClientService>();
+// Default: the bundled wireguard-nt engine (nothing else to install). Set Tunnel:Engine=WireGuardExe
+// (or env Tunnel__Engine) to drive an installed WireGuard for Windows instead.
+if (string.Equals(builder.Configuration["Tunnel:Engine"], "WireGuardExe", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddSingleton<IWireGuardClientService, WireGuardClientService>();
+}
+else
+{
+    builder.Services.AddSingleton<IWireGuardNativeTunnel, WireGuardNtTunnel>();
+    builder.Services.AddSingleton<IWireGuardClientService, EmbeddedWireGuardClientService>();
+}
 builder.Services.AddSingleton<IPrivilegedOperationHandler, ClientAgentServiceFoundation>();
 builder.Services.AddSingleton<IPrivilegedOperationDispatcher, PrivilegedOperationDispatcher>();
 builder.Services.AddSingleton<PipeSessionHandler>();

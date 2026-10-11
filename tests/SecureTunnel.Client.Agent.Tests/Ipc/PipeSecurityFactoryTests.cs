@@ -31,7 +31,7 @@ public class PipeSecurityFactoryTests
     }
 
     [Fact]
-    public void Create_DeniesEveryone()
+    public void Create_DoesNotDenyEveryone_BecauseDenyWinsAndWouldLockOutUsers()
     {
         var security = PipeSecurityFactory.Create();
         var everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, domainSid: null);
@@ -40,7 +40,23 @@ public class PipeSecurityFactoryTests
             .Cast<System.IO.Pipes.PipeAccessRule>()
             .ToList();
 
-        Assert.Contains(rules, r => r.IdentityReference == everyone && r.AccessControlType == AccessControlType.Deny);
+        Assert.DoesNotContain(rules, r => r.IdentityReference == everyone && r.AccessControlType == AccessControlType.Deny);
+    }
+
+    [Theory]
+    [InlineData(WellKnownSidType.LocalSystemSid)]
+    [InlineData(WellKnownSidType.BuiltinAdministratorsSid)]
+    public void Create_GrantsFullControlToServiceIdentityAndAdministrators(WellKnownSidType sidType)
+    {
+        var security = PipeSecurityFactory.Create();
+        var sid = new SecurityIdentifier(sidType, domainSid: null);
+
+        var rules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+            .Cast<System.IO.Pipes.PipeAccessRule>()
+            .ToList();
+
+        Assert.Contains(rules, r => r.IdentityReference == sid && r.AccessControlType == AccessControlType.Allow
+            && r.PipeAccessRights.HasFlag(System.IO.Pipes.PipeAccessRights.FullControl));
     }
 
     [Fact]
