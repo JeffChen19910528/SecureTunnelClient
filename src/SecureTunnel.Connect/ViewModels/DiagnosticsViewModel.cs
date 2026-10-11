@@ -5,6 +5,7 @@ using System.Windows.Input;
 using SecureTunnel.Client.Core.Client;
 using SecureTunnel.Client.Core.Diagnostics;
 using SecureTunnel.Client.Core.WireGuard;
+using SecureTunnel.Connect.Localization;
 
 namespace SecureTunnel.Connect.ViewModels;
 
@@ -23,6 +24,7 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
     public DiagnosticsViewModel(IPrivilegedClientService clientService)
     {
         _clientService = clientService;
+        Loc.Instance.LanguageChanged += (_, _) => OnPropertyChanged(string.Empty);
         CopyToClipboardCommand = new RelayCommand(() =>
         {
             System.Windows.Clipboard.SetText(BuildClipboardText());
@@ -33,6 +35,10 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ICommand CopyToClipboardCommand { get; }
+
+    public string AgentReachableText => Loc.T("Diag_AgentReachable", Loc.Bool(_snapshot.AgentAvailable));
+
+    public string WireGuardInstalledText => Loc.T("Diag_WireGuardInstalled", Loc.Bool(_snapshot.WireGuardExecutableAvailable));
 
     public bool AgentAvailable => _snapshot.AgentAvailable;
 
@@ -67,12 +73,14 @@ public sealed class DiagnosticsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(AgentAvailable));
         OnPropertyChanged(nameof(PipeAvailable));
         OnPropertyChanged(nameof(WireGuardExecutableAvailable));
+        OnPropertyChanged(nameof(AgentReachableText));
+        OnPropertyChanged(nameof(WireGuardInstalledText));
         OnPropertyChanged(nameof(LastOperationSummary));
     }
 
     public string LastOperationSummary => _snapshot.LastOperation is { } op
         ? $"{op.Operation}: {op.Result} ({op.ErrorCode}) at {op.TimestampUtc:u}"
-        : "No operation performed yet.";
+        : Loc.T("Diag_NoOperation");
 
     public string BuildClipboardText()
     {

@@ -1,5 +1,6 @@
 using System.Windows;
 using SecureTunnel.Client.Infrastructure.Ipc;
+using SecureTunnel.Connect.Localization;
 using SecureTunnel.Connect.Services;
 using SecureTunnel.Connect.ViewModels;
 
@@ -26,6 +27,8 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        Loc.Instance.InitializeFromEnvironment();
 
         var clientService = new NamedPipePrivilegedClientProxy();
         var viewModel = new MainViewModel(clientService);

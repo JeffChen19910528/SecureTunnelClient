@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using SecureTunnel.Client.Core.Client;
 using SecureTunnel.Client.Core.Configuration;
+using SecureTunnel.Connect.Localization;
 
 namespace SecureTunnel.Connect.ViewModels;
 
@@ -79,12 +80,12 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             }
             catch (IOException)
             {
-                ValidationIssues = ["The selected file could not be read."];
+                ValidationIssues = [Loc.T("Import_FileUnreadable")];
                 return;
             }
             catch (UnauthorizedAccessException)
             {
-                ValidationIssues = ["The selected file could not be read."];
+                ValidationIssues = [Loc.T("Import_FileUnreadable")];
                 return;
             }
 
@@ -92,7 +93,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
             if (!result.Success || result.Configuration is null)
             {
-                ValidationIssues = [result.UserSafeMessage ?? "The configuration is invalid."];
+                ValidationIssues = [result.UserSafeMessage ?? Loc.T("Import_Invalid")];
                 return;
             }
 

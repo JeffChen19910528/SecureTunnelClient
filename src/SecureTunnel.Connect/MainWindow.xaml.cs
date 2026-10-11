@@ -1,5 +1,6 @@
 using System.Windows;
 using Microsoft.Win32;
+using SecureTunnel.Connect.Localization;
 using SecureTunnel.Connect.ViewModels;
 
 namespace SecureTunnel.Connect;
@@ -28,8 +29,8 @@ public partial class MainWindow : Window
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "WireGuard configuration (*.conf)|*.conf|All files (*.*)|*.*",
-            Title = "Import WireGuard Configuration"
+            Filter = Loc.T("Dialog_ImportFilter"),
+            Title = Loc.T("Dialog_ImportTitle")
         };
 
         if (dialog.ShowDialog(this) == true)

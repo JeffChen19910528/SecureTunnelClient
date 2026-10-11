@@ -5,6 +5,7 @@ using SecureTunnel.Connect.ViewModels;
 
 namespace SecureTunnel.Client.Connect.Tests;
 
+[Collection("Localization")]
 public class DiagnosticsViewModelTests
 {
     private static readonly Regex KeyShapedToken = new(@"[A-Za-z0-9+/]{42,44}=", RegexOptions.Compiled);

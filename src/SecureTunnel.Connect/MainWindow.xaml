@@ -1,15 +1,20 @@
 <Window x:Class="SecureTunnel.Connect.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SecureTunnel Connect" Height="480" Width="420">
+        xmlns:loc="clr-namespace:SecureTunnel.Connect.Localization"
+        Title="{loc:Loc Window_Title}" Height="480" Width="420">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20">
-            <TextBlock Text="SecureTunnel Connect" FontSize="18" FontWeight="Bold" />
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right" Content="{loc:Loc Language_Switch}" Command="{Binding ToggleLanguageCommand}"
+                        Padding="8,2" VerticalAlignment="Center" />
+                <TextBlock Text="{loc:Loc Window_Title}" FontSize="18" FontWeight="Bold" />
+            </DockPanel>
             <TextBlock Text="{Binding StatusText}" Margin="0,8,0,0" TextWrapping="Wrap" />
 
             <!-- Import -->
-            <TextBlock Text="Configuration" FontWeight="Bold" Margin="0,20,0,4" />
-            <Button Content="Import Configuration..." Click="OnImportClick" HorizontalAlignment="Left" Padding="8,4" />
+            <TextBlock Text="{loc:Loc Section_Configuration}" FontWeight="Bold" Margin="0,20,0,4" />
+            <Button Content="{loc:Loc Button_Import}" Click="OnImportClick" HorizontalAlignment="Left" Padding="8,4" />
             <ItemsControl ItemsSource="{Binding Import.ValidationIssues}" Margin="0,6,0,0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -21,34 +26,34 @@
             <!-- Configuration summary - Gateway endpoint, tunnel address, AllowedIPs only.
                  No private key, preshared key, or other secret is ever bound here. -->
             <StackPanel Visibility="{Binding HasConfiguration, Converter={StaticResource BoolToVisibility}}" Margin="0,10,0,0">
-                <TextBlock Text="Selected configuration" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding CurrentConfiguration.ClientId, StringFormat='Client Id: {0}'}" />
-                <TextBlock Text="{Binding CurrentConfiguration.GatewayEndpoint, StringFormat='Gateway endpoint: {0}'}" />
-                <TextBlock Text="{Binding CurrentConfiguration.InterfaceAddress, StringFormat='Tunnel address: {0}'}" />
-                <TextBlock Text="{Binding AllowedIPsText, StringFormat='AllowedIPs: {0}'}" TextWrapping="Wrap" />
+                <TextBlock Text="{loc:Loc Section_SelectedConfiguration}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ClientIdText}" />
+                <TextBlock Text="{Binding GatewayEndpointText}" />
+                <TextBlock Text="{Binding TunnelAddressText}" />
+                <TextBlock Text="{Binding AllowedIPsLine}" TextWrapping="Wrap" />
             </StackPanel>
 
             <!-- Connection controls -->
-            <TextBlock Text="Connection" FontWeight="Bold" Margin="0,20,0,4" />
+            <TextBlock Text="{loc:Loc Section_Connection}" FontWeight="Bold" Margin="0,20,0,4" />
             <StackPanel Orientation="Horizontal">
-                <Button Content="Connect" Command="{Binding ConnectCommand}" Width="90" Margin="0,0,8,0" Padding="4" />
-                <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Width="90" Margin="0,0,8,0" Padding="4" />
-                <Button Content="Refresh" Command="{Binding RefreshStatusCommand}" Width="90" Padding="4" />
+                <Button Content="{loc:Loc Button_Connect}" Command="{Binding ConnectCommand}" Width="90" Margin="0,0,8,0" Padding="4" />
+                <Button Content="{loc:Loc Button_Disconnect}" Command="{Binding DisconnectCommand}" Width="90" Margin="0,0,8,0" Padding="4" />
+                <Button Content="{loc:Loc Button_Refresh}" Command="{Binding RefreshStatusCommand}" Width="90" Padding="4" />
             </StackPanel>
 
             <!-- Diagnostics -->
-            <TextBlock Text="Diagnostics" FontWeight="Bold" Margin="0,20,0,4" />
+            <TextBlock Text="{loc:Loc Section_Diagnostics}" FontWeight="Bold" Margin="0,20,0,4" />
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding Diagnostics.AgentAvailable, StringFormat='Agent reachable: {0}'}" Margin="0,0,16,0" />
-                <TextBlock Text="{Binding Diagnostics.WireGuardExecutableAvailable, StringFormat='WireGuard installed: {0}'}" />
+                <TextBlock Text="{Binding Diagnostics.AgentReachableText}" Margin="0,0,16,0" />
+                <TextBlock Text="{Binding Diagnostics.WireGuardInstalledText}" />
             </StackPanel>
             <TextBlock Text="{Binding Diagnostics.LastOperationSummary}" Margin="0,4,0,0" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                <Button Content="Refresh Diagnostics" Click="OnRefreshDiagnosticsClick" Padding="4" Margin="0,0,8,0" />
-                <Button Content="Copy to Clipboard" Command="{Binding Diagnostics.CopyToClipboardCommand}" Padding="4" />
+                <Button Content="{loc:Loc Button_RefreshDiagnostics}" Click="OnRefreshDiagnosticsClick" Padding="4" Margin="0,0,8,0" />
+                <Button Content="{loc:Loc Button_CopyToClipboard}" Command="{Binding Diagnostics.CopyToClipboardCommand}" Padding="4" />
             </StackPanel>
 
-            <TextBlock Text="Phase C3 prototype build - real end-to-end WireGuard connectivity has not been verified. Closing this window minimizes to the system tray."
+            <TextBlock Text="{loc:Loc Footer_Note}"
                        Margin="0,20,0,0" TextWrapping="Wrap" Opacity="0.7" />
         </StackPanel>
     </ScrollViewer>

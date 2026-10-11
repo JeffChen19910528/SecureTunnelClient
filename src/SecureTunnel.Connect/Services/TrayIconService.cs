@@ -1,5 +1,6 @@
 using System.Windows.Forms;
 using SecureTunnel.Client.Core.Models;
+using SecureTunnel.Connect.Localization;
 
 namespace SecureTunnel.Connect.Services;
 
@@ -15,6 +16,8 @@ namespace SecureTunnel.Connect.Services;
 public sealed class TrayIconService : IDisposable
 {
     private readonly NotifyIcon _notifyIcon;
+    private readonly ToolStripItem _restoreItem;
+    private readonly ToolStripItem _exitItem;
 
     public event EventHandler? RestoreRequested;
 
@@ -23,8 +26,9 @@ public sealed class TrayIconService : IDisposable
     public TrayIconService()
     {
         var contextMenu = new ContextMenuStrip();
-        contextMenu.Items.Add("Restore", null, (_, _) => RestoreRequested?.Invoke(this, EventArgs.Empty));
-        contextMenu.Items.Add("Exit", null, (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty));
+        _restoreItem = contextMenu.Items.Add(Loc.T("Tray_Restore"), null, (_, _) => RestoreRequested?.Invoke(this, EventArgs.Empty));
+        _exitItem = contextMenu.Items.Add(Loc.T("Tray_Exit"), null, (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty));
+        Loc.Instance.LanguageChanged += OnLanguageChanged;
 
         _notifyIcon = new NotifyIcon
         {
@@ -37,6 +41,12 @@ public sealed class TrayIconService : IDisposable
         _notifyIcon.DoubleClick += (_, _) => RestoreRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        _restoreItem.Text = Loc.T("Tray_Restore");
+        _exitItem.Text = Loc.T("Tray_Exit");
+    }
+
     public void Show() => _notifyIcon.Visible = true;
 
     public void UpdateState(ClientState state)
@@ -46,6 +56,7 @@ public sealed class TrayIconService : IDisposable
 
     public void Dispose()
     {
+        Loc.Instance.LanguageChanged -= OnLanguageChanged;
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
     }

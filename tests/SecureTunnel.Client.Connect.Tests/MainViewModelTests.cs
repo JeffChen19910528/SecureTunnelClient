@@ -8,6 +8,7 @@ using SecureTunnel.Connect.ViewModels;
 
 namespace SecureTunnel.Client.Connect.Tests;
 
+[Collection("Localization")]
 public class MainViewModelTests : IDisposable
 {
     private readonly string _tempFile = Path.Combine(Path.GetTempPath(), $"main-vm-test-{Guid.NewGuid():N}.conf");

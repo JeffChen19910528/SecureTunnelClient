@@ -5,6 +5,7 @@ using SecureTunnel.Client.Core.Client;
 using SecureTunnel.Client.Core.Configuration;
 using SecureTunnel.Client.Core.Models;
 using SecureTunnel.Client.Core.WireGuard;
+using SecureTunnel.Connect.Localization;
 
 namespace SecureTunnel.Connect.ViewModels;
 
@@ -45,6 +46,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ConnectCommand = new RelayCommand(async () => await ConnectAsync());
         DisconnectCommand = new RelayCommand(async () => await DisconnectAsync());
         RefreshStatusCommand = new RelayCommand(async () => await RefreshStatusAsync());
+        ToggleLanguageCommand = new RelayCommand(() =>
+        {
+            Loc.Instance.Toggle();
+            Loc.Instance.SavePreference();
+            return Task.CompletedTask;
+        });
+
+        // Localized text is computed on read, so a language switch only needs to re-raise every property.
+        Loc.Instance.LanguageChanged += (_, _) => OnPropertyChanged(string.Empty);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -56,6 +66,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ConnectCommand { get; }
     public ICommand DisconnectCommand { get; }
     public ICommand RefreshStatusCommand { get; }
+    public ICommand ToggleLanguageCommand { get; }
 
     public string ClientId
     {
@@ -81,6 +92,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public bool HasConfiguration => _currentConfiguration is not null;
 
+    public string ClientIdText => Loc.T("Config_ClientId", _currentConfiguration?.ClientId);
+
+    public string GatewayEndpointText => Loc.T("Config_GatewayEndpoint", _currentConfiguration?.GatewayEndpoint);
+
+    public string TunnelAddressText => Loc.T("Config_TunnelAddress", _currentConfiguration?.InterfaceAddress);
+
+    public string AllowedIPsLine => Loc.T("Config_AllowedIPs", AllowedIPsText);
+
     public string AllowedIPsText => _currentConfiguration is null ? string.Empty : string.Join(", ", _currentConfiguration.AllowedIPs);
 
     public ClientState State
@@ -105,14 +124,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// </summary>
     public string StatusText => _lastOutcome switch
     {
-        WireGuardOutcome.ServiceUnavailable => "Service unavailable - the SecureTunnel Agent could not be reached.",
-        WireGuardOutcome.PipeConnectionFailed => "Connection to the SecureTunnel Agent was lost.",
-        WireGuardOutcome.AccessDenied => "Access denied by the SecureTunnel Agent.",
-        WireGuardOutcome.WireGuardNotInstalled => "WireGuard is not installed on this computer.",
-        WireGuardOutcome.PermissionDenied => "Administrator permission is required.",
-        WireGuardOutcome.InvalidConfiguration => "The selected configuration is invalid.",
-        WireGuardOutcome.ConnectionFailed => _lastMessage is null ? "Connection failed." : $"Connection failed - {_lastMessage}",
-        WireGuardOutcome.DisconnectFailed => _lastMessage is null ? "Disconnect failed." : $"Disconnect failed - {_lastMessage}",
+        WireGuardOutcome.ServiceUnavailable => Loc.T("Status_ServiceUnavailable"),
+        WireGuardOutcome.PipeConnectionFailed => Loc.T("Status_PipeConnectionFailed"),
+        WireGuardOutcome.AccessDenied => Loc.T("Status_AccessDenied"),
+        WireGuardOutcome.WireGuardNotInstalled => Loc.T("Status_WireGuardNotInstalled"),
+        WireGuardOutcome.PermissionDenied => Loc.T("Status_PermissionDenied"),
+        WireGuardOutcome.InvalidConfiguration => Loc.T("Status_InvalidConfiguration"),
+        WireGuardOutcome.ConnectionFailed => _lastMessage is null ? Loc.T("Status_ConnectionFailed") : Loc.T("Status_ConnectionFailedWith", _lastMessage),
+        WireGuardOutcome.DisconnectFailed => _lastMessage is null ? Loc.T("Status_DisconnectFailed") : Loc.T("Status_DisconnectFailedWith", _lastMessage),
         _ => BuildStateStatusText()
     };
 
@@ -148,8 +167,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(StatusText));
     }
 
+    private string StateName => Loc.T($"State_{_state}");
+
     private string BuildStateStatusText() =>
-        _lastMessage is null ? $"Status: {_state}" : $"Status: {_state} - {_lastMessage}";
+        _lastMessage is null ? Loc.T("Status_State", StateName) : Loc.T("Status_StateWith", StateName, _lastMessage);
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

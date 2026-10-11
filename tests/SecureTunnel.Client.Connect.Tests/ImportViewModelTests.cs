@@ -7,6 +7,7 @@ using SecureTunnel.Connect.ViewModels;
 
 namespace SecureTunnel.Client.Connect.Tests;
 
+[Collection("Localization")]
 public class ImportViewModelTests : IDisposable
 {
     private readonly string _tempFile = Path.Combine(Path.GetTempPath(), $"import-test-{Guid.NewGuid():N}.conf");
