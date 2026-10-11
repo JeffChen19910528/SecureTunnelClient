@@ -6,7 +6,7 @@ namespace SecureTunnel.Client.Agent.Contracts;
 /// ValidateConfiguration. There is intentionally no generic
 /// "HandleAsync(object request)" catch-all method - every operation the
 /// privileged side can perform must have an explicit, narrowly-typed
-/// method here. See docs/windows-service-boundary.md for the rationale.
+/// method here.
 /// </summary>
 public interface IPrivilegedOperationHandler
 {

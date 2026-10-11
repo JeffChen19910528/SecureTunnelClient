@@ -22,6 +22,83 @@ public class MainViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Connect_Success_PollsUntilServiceReportsConnected()
+    {
+        var fake = new FakePrivilegedClientService
+        {
+            StatusResult = new PrivilegedClientResult(true, WireGuardOutcome.Connected, null, null, ClientState.Connected)
+        };
+        var viewModel = new MainViewModel(fake, TimeSpan.FromMilliseconds(10));
+
+        await viewModel.ConnectAsync();
+
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (viewModel.State != ClientState.Connected && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(20);
+        }
+
+        Assert.Equal(ClientState.Connected, viewModel.State);
+        Assert.Contains("GetStatusAsync", fake.Calls);
+    }
+
+    [Fact]
+    public async Task Connect_Success_DoesNotClaimConnectedBeforeServiceReportsIt()
+    {
+        var fake = new FakePrivilegedClientService
+        {
+            StatusResult = new PrivilegedClientResult(true, WireGuardOutcome.AwaitingHandshake, null, null, ClientState.AwaitingHandshake)
+        };
+        var viewModel = new MainViewModel(fake, TimeSpan.FromMilliseconds(10));
+
+        await viewModel.ConnectAsync();
+        await Task.Delay(100);
+        await viewModel.DisconnectAsync();
+
+        Assert.NotEqual(ClientState.Connected, viewModel.State);
+    }
+
+    [Fact]
+    public async Task Disconnect_Success_ShowsDisconnectedAndStopsPolling()
+    {
+        var fake = new FakePrivilegedClientService
+        {
+            StatusResult = new PrivilegedClientResult(true, WireGuardOutcome.Connected, null, null, ClientState.Connected)
+        };
+        var viewModel = new MainViewModel(fake, TimeSpan.FromMilliseconds(10));
+        await viewModel.ConnectAsync();
+        await Task.Delay(100);
+
+        await viewModel.DisconnectAsync();
+        var callsAtDisconnect = fake.Calls.Count;
+        await Task.Delay(150);
+
+        Assert.Equal(ClientState.Disconnected, viewModel.State);
+        Assert.Equal(callsAtDisconnect, fake.Calls.Count);
+    }
+
+    [Fact]
+    public async Task Import_RaisesChangeNotificationsForConfigurationSummaryTexts()
+    {
+        await File.WriteAllTextAsync(_tempFile, "text");
+        var fake = new FakePrivilegedClientService
+        {
+            ValidateConfigurationResult = new PrivilegedClientResult(true, WireGuardOutcome.Unknown, null, null, null,
+                new ConfigurationSummary("client-x", "gw:51820", "10.0.0.2/32", ["10.10.0.0/24"]))
+        };
+        var viewModel = new MainViewModel(fake, TimeSpan.FromMilliseconds(10));
+        var raised = new List<string?>();
+        viewModel.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        await viewModel.Import.ImportConfigurationAsync(_tempFile, CancellationToken.None);
+
+        Assert.Contains(nameof(MainViewModel.ClientIdText), raised);
+        Assert.Contains(nameof(MainViewModel.GatewayEndpointText), raised);
+        Assert.Contains(nameof(MainViewModel.TunnelAddressText), raised);
+        Assert.Contains(nameof(MainViewModel.AllowedIPsLine), raised);
+    }
+
+    [Fact]
     public async Task ClientId_FlowsFromImport_IntoSubsequentOperations()
     {
         await File.WriteAllTextAsync(_tempFile, "text");
@@ -76,7 +153,7 @@ public class MainViewModelTests : IDisposable
 
         await viewModel.ConnectAsync();
 
-        Assert.Contains("WireGuard is not installed", viewModel.StatusText);
+        Assert.Contains("WireGuard engine is missing", viewModel.StatusText);
     }
 
     [Fact]

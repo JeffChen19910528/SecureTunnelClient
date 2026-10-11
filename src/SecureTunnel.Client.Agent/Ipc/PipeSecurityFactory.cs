@@ -7,26 +7,16 @@ namespace SecureTunnel.Client.Agent.Ipc;
 /// <summary>
 /// Builds the access control list applied to the Named Pipe server.
 ///
-/// Rule set (see docs/windows-service-boundary.md's Service Identity
-/// Rationale and docs/ipc-protocol.md for full context): grants
-/// <c>ReadWrite</c> to <c>BUILTIN\Users</c> - broad enough that any local
-/// desktop user account can operate the single-user prototype client,
-/// while still excluding services, remote callers, and anonymous
-/// connections. Explicitly denies <c>Everyone</c>, <c>ANONYMOUS LOGON</c>,
-/// and <c>NT AUTHORITY\NETWORK</c>.
+/// Allows <c>BUILTIN\Users</c> to read/write, so the unelevated desktop app can talk to the Agent, and gives
+/// <c>SYSTEM</c> and <c>BUILTIN\Administrators</c> full control. <c>ANONYMOUS LOGON</c> and
+/// <c>NT AUTHORITY\NETWORK</c> are explicitly denied, which keeps remote and anonymous callers out.
 ///
-/// ACCEPTED RISK, not overclaimed: because the Agent is designed to run
-/// as LocalSystem (see the rationale doc) while the WPF client runs
-/// unelevated as an arbitrary interactive user, a per-importing-user SID
-/// allow-list would require an install-time configuration step that does
-/// not exist yet - deferred to a later phase. Until then, any local user
-/// account (not just the one who imported a configuration) can issue
-/// pipe operations against whatever configuration is currently stored.
-/// This has been verified only at the ACL-object-construction level
-/// (<c>PipeSecurityFactoryTests</c>) - there is no automated or manual
-/// test in this phase that proves a genuinely different Windows identity
-/// is denied at runtime, because doing so requires a second logon session
-/// not available in this environment.
+/// There must be no Deny entry for <c>Everyone</c>: a Deny always wins over an Allow, so it would also lock out
+/// <c>BUILTIN\Users</c> and nobody could connect. Everyone not allowed above is already refused because no Allow
+/// entry exists for them.
+///
+/// Any local user account can therefore issue pipe operations against the stored configuration; the pipe does
+/// not distinguish between users of the same PC.
 /// </summary>
 public static class PipeSecurityFactory
 {

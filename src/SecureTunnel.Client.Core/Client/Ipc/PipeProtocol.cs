@@ -3,7 +3,6 @@ namespace SecureTunnel.Client.Core.Client.Ipc;
 /// <summary>
 /// Constants shared by both ends of the Named Pipe transport. The pipe
 /// name is fixed and product-owned - it is never supplied by a caller.
-/// See docs/ipc-protocol.md for the full wire protocol.
 /// </summary>
 public static class PipeProtocol
 {

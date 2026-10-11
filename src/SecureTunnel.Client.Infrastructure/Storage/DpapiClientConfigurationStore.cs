@@ -14,16 +14,9 @@ namespace SecureTunnel.Client.Infrastructure.Storage;
 /// file untouched rather than risk replacing a valid configuration with
 /// corrupted data. Error messages never include key material.
 ///
-/// The machine scope (rather than <see cref="DataProtectionScope.CurrentUser"/>,
-/// used through Phase C2) is a deliberate consequence of the Agent being
-/// designed to eventually run as LocalSystem (see
-/// docs/windows-service-boundary.md's Service Identity Rationale): a
-/// CurrentUser-scoped blob encrypted by one identity cannot be decrypted
-/// by a different one. This is a breaking storage-format change with no
-/// migration path - configurations saved by Phase C1/C2 builds cannot be
-/// read by this version and must be re-imported (documented as a
-/// Deferred Item; acceptable for pre-1.0 prototype software with no real
-/// deployments).
+/// The machine scope (rather than <see cref="DataProtectionScope.CurrentUser"/>) is used because the Agent
+/// runs as LocalSystem while the user who imports a configuration is a different identity; a CurrentUser blob
+/// could not be decrypted by the service.
 /// </summary>
 public sealed class DpapiClientConfigurationStore : IClientConfigurationStore
 {
@@ -31,7 +24,7 @@ public sealed class DpapiClientConfigurationStore : IClientConfigurationStore
     private readonly IAtomicFileWriter _fileWriter;
     private readonly DataProtectionScope _protectionScope;
 
-    /// <summary>The resolved, validated directory this store reads/writes under - exposed for deployment/path-resolution verification (see docs/deployment-guide.md).</summary>
+    /// <summary>The resolved, validated directory this store reads/writes under - exposed for diagnostics.</summary>
     public string StorageRoot => _storageRoot;
 
     public DpapiClientConfigurationStore(

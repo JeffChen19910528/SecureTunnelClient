@@ -31,16 +31,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private WireGuardOutcome? _lastOutcome;
     private string? _lastMessage;
     private ConfigurationSummary? _currentConfiguration;
+    private CancellationTokenSource? _pollCts;
+    private readonly TimeSpan _pollInterval;
 
-    public MainViewModel(IPrivilegedClientService clientService)
+    public MainViewModel(IPrivilegedClientService clientService, TimeSpan? pollInterval = null)
     {
         _clientService = clientService;
+        _pollInterval = pollInterval ?? TimeSpan.FromSeconds(2);
         Import = new ImportViewModel(clientService);
         Diagnostics = new DiagnosticsViewModel(clientService);
         Import.ImportSucceeded += (_, summary) =>
         {
             ClientId = summary.ClientId;
             CurrentConfiguration = summary;
+            // Show the real tunnel state (e.g. Disconnected, or already Connected) instead of "Not configured".
+            _ = RefreshStatusAsync();
         };
 
         ConnectCommand = new RelayCommand(async () => await ConnectAsync());
@@ -87,6 +92,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasConfiguration));
             OnPropertyChanged(nameof(AllowedIPsText));
+            OnPropertyChanged(nameof(ClientIdText));
+            OnPropertyChanged(nameof(GatewayEndpointText));
+            OnPropertyChanged(nameof(TunnelAddressText));
+            OnPropertyChanged(nameof(AllowedIPsLine));
         }
     }
 
@@ -139,12 +148,67 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         var result = await _clientService.ConnectAsync(_clientId, CancellationToken.None);
         Apply(result);
+
+        if (result.Success)
+        {
+            StartPolling();
+        }
     }
 
     public async Task DisconnectAsync()
     {
+        StopPolling();
         var result = await _clientService.DisconnectAsync(_clientId, CancellationToken.None);
         Apply(result);
+        if (result.Success)
+        {
+            State = ClientState.Disconnected;
+            OnPropertyChanged(nameof(StatusText));
+        }
+    }
+
+    /// <summary>
+    /// A successful Connect only means the tunnel was started. Keep asking the service for the observed
+    /// state so the window moves to Connected once a real handshake happens, and notices later drops.
+    /// Stops when the tunnel is gone or errors, on Disconnect, or when a new poll supersedes it.
+    /// </summary>
+    private void StartPolling()
+    {
+        StopPolling();
+        var cts = _pollCts = new CancellationTokenSource();
+        _ = PollAsync(cts.Token);
+    }
+
+    private void StopPolling()
+    {
+        _pollCts?.Cancel();
+        _pollCts = null;
+    }
+
+    private async Task PollAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(_pollInterval, cancellationToken);
+                var result = await _clientService.GetStatusAsync(_clientId, cancellationToken);
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                Apply(result);
+                if (!result.Success || State is ClientState.Disconnected or ClientState.Error)
+                {
+                    return;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by Disconnect or a newer Connect.
+        }
     }
 
     public async Task RefreshStatusAsync()

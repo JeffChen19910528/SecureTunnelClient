@@ -135,7 +135,7 @@ public class DpapiClientConfigurationStoreTests : IDisposable
     [Fact]
     public void DefaultStorageRoot_ResolvesUnder_ProgramData_SecureTunnel_Agent_Configs()
     {
-        // Path-resolution verification for the Phase C6 deployment layout
+        // Path-resolution verification for the installed deployment layout
         // (docs/deployment-guide.md): the default (no storageRoot override)
         // must resolve under %ProgramData%\SecureTunnel\Agent\configs -
         // the machine-wide directory install-service.ps1 provisions with a
@@ -163,8 +163,8 @@ public class DpapiClientConfigurationStoreTests : IDisposable
     [Fact]
     public async Task LoadAsync_LegacyCurrentUserScopedData_SameIdentity_ActuallyDecryptsSuccessfully()
     {
-        // REAL-WINDOWS FINDING (Phase C4 acceptance testing), correcting an
-        // assumption documented in Phase C3: Windows DPAPI's CryptUnprotectData
+        // REAL-WINDOWS FINDING (verified on real Windows), correcting an
+        // earlier assumption: Windows DPAPI's CryptUnprotectData
         // determines which master key (user or machine) to use from metadata
         // embedded in the blob itself, not solely from the scope flag passed
         // to Unprotect. When the *same Windows identity* that encrypted a
@@ -172,7 +172,6 @@ public class DpapiClientConfigurationStoreTests : IDisposable
         // scope, decryption still succeeds - the scope flag mismatch alone
         // does NOT make legacy data unreadable for that identity. This was
         // verified on this real Windows 11 machine (not assumed/mocked).
-        // See docs/security-model.md and docs/roadmap.md for what this does
         // and does not change about the documented migration risk (a
         // genuinely different identity, e.g. LocalSystem, still cannot
         // decrypt another user's CurrentUser-scoped profile data - that

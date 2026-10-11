@@ -1,15 +1,9 @@
 <Project>
 
-  <!--
-    Shared version for all projects in this solution, read by
-    deploy/package.ps1 to produce versioned packaging artifacts. This is
-    pre-1.0 prototype software (see README.md / docs/roadmap.md) - the
-    version number tracks completed phases (0.6.0 = through Phase C6),
-    not a production release.
-  -->
+  <!-- Shared version for all projects; deploy/package.ps1 and deploy/build-setup.ps1 name their output after it. -->
   <PropertyGroup>
-    <Version>0.6.0</Version>
-    <InformationalVersion>0.6.0-c6-standalone-client</InformationalVersion>
+    <Version>0.7.0</Version>
+    <InformationalVersion>0.7.0</InformationalVersion>
   </PropertyGroup>
 
   <!--

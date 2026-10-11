@@ -301,8 +301,7 @@ public sealed class WireGuardClientService : IWireGuardClientService
     /// Restricts the temp tunnel file to the current user. There is a
     /// brief window between file creation and this call during which the
     /// file carries the directory's inherited ACL - this is an accepted
-    /// risk for a short-lived temp file, documented in
-    /// docs/security-model.md, not a guarantee.
+    /// risk for a short-lived temp file.
     /// </summary>
     private static void RestrictToCurrentUser(string path)
     {

@@ -12,7 +12,7 @@ namespace SecureTunnel.Client.TestSupport;
 /// properties). Use this to exercise <c>WireGuardClientService</c>
 /// callers' behavior under each of the standalone-client acceptance
 /// scenarios without requiring WireGuard, a Windows Service, or a real
-/// Gateway. See docs/c5-standalone-client-acceptance.md.
+/// Gateway.
 /// </summary>
 public sealed class FakeWireGuardClientService : IWireGuardClientService
 {

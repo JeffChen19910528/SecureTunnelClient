@@ -1,45 +1,19 @@
 <#
 .SYNOPSIS
-    Installs the SecureTunnel Agent as a Windows Service, and provisions
-    its required data directories.
+    Installs the SecureTunnel Agent as a Windows Service.
 
 .DESCRIPTION
-    Registers SecureTunnel.Client.Agent.exe as a Windows Service named
-    "SecureTunnelAgent" (must match Program.cs's AddWindowsService call).
-    Uses New-Service with explicit, individually-validated parameters -
-    never a concatenated sc.exe command-line string. Validates the
-    executable path before use: it must exist, must be an .exe file, and
-    must not be a relative path or contain ".." segments, to avoid
-    resolving an arbitrary or untrusted executable.
+    Registers SecureTunnel.Client.Agent.exe as the "SecureTunnelAgent" service (automatic start, restart on the
+    first two failures) and creates %ProgramData%\SecureTunnel\Agent\configs, restricted to SYSTEM and
+    Administrators because it holds the encrypted tunnel configuration. The service is not started by this
+    script: run "Start-Service SecureTunnelAgent" afterwards.
 
-    Idempotent where practical (Phase C6): if the service is already
-    installed, this script detects it, compares the installed binary's
-    file version against the one being installed, and either reports
-    "already up to date" (same version, same binary path - a no-op,
-    success) or fails with a clear message instructing the operator to
-    run uninstall-service.ps1 first for an upgrade (Phase C6 does not
-    attempt an in-place binary swap of a running service, since that
-    requires stopping it first and is left to a documented manual
-    upgrade procedure - see docs/deployment-guide.md).
-
-    Also creates (idempotently - Test-Path guarded) the machine-wide data
-    directories the Agent needs (%ProgramData%\SecureTunnel\Agent\configs)
-    with an ACL restricted to SYSTEM and Administrators only - not
-    world-readable, consistent with the DPAPI-LocalMachine-protected data
-    stored there (see docs/security-model.md).
-
-    THIS SCRIPT HAS NOT BEEN EXECUTED AS PART OF ANY PHASE THROUGH C6. It
-    requires an elevated (Administrator) PowerShell session, which this
-    development session does not have and was not authorized to acquire.
-    It has been written, reviewed, and syntax-checked for correctness
-    only - installing the service is an explicit, separate, real-Windows-
-    environment acceptance step for a later phase. See
-    docs/windows-service-installation.md and docs/c6-packaging-report.md.
+    Run from an elevated (Administrator) PowerShell. Running it again with the same executable is a no-op;
+    to upgrade, run uninstall-service.ps1 first.
 
 .PARAMETER ExecutablePath
-    Full path to SecureTunnel.Client.Agent.exe (the published/built
-    binary, e.g. produced by deploy\package.ps1). Must be an absolute
-    path to an existing .exe file.
+    Absolute path to SecureTunnel.Client.Agent.exe (a folder produced by deploy\package.ps1, or an install folder).
+    wireguard.dll must sit in the same folder.
 
 .EXAMPLE
     .\install-service.ps1 -ExecutablePath "C:\Program Files\SecureTunnel\Agent\SecureTunnel.Client.Agent.exe"

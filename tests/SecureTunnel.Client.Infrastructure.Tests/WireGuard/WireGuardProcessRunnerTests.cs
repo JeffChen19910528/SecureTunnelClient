@@ -51,7 +51,7 @@ public class WireGuardProcessRunnerTests
         // Poll (rather than a single fixed delay) for the OS to actually
         // tear the process down, then confirm no lingering "ping" child
         // process from this test run. A fixed short delay was found to be
-        // flaky under system load (Phase C7 real-Windows acceptance run:
+        // flaky under system load (seen on a loaded real Windows machine:
         // failed when the full solution test suite ran in parallel,
         // passed in isolation) - polling up to a generous bound removes
         // that flakiness without weakening the assertion itself.

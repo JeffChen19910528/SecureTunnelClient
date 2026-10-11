@@ -1,27 +1,14 @@
 <#
 .SYNOPSIS
-    Deterministic, repeatable local packaging for SecureTunnel Connect
-    (Agent + WPF client).
+    Builds SecureTunnel Connect (Agent + WPF client) into versioned, checksummed folders and zips.
 
 .DESCRIPTION
-    Builds and publishes both SecureTunnel.Client.Agent and
-    SecureTunnel.Connect in Release configuration for win-x64,
-    framework-dependent (does not bundle the .NET runtime - the target
-    machine is expected to have the .NET 10 Desktop Runtime installed,
-    consistent with docs/windows-service-installation.md), lays the
-    output into a versioned artifact directory, strips development-only
-    files (.pdb, .xml doc files are kept only if present; no test
-    projects are ever part of the publish graph), and produces a SHA256
-    checksum file plus a zip archive per component.
-
-    This script performs no elevation-requiring or system-modifying
-    action - it only builds/publishes/copies/zips into a local output
-    directory. It is safe to run repeatedly (idempotent: each run
-    overwrites its own versioned output directory).
+    Publishes SecureTunnel.Client.Agent and SecureTunnel.Connect (Release, win-x64, self-contained: the target PC
+    needs no .NET runtime), writes artifacts\<version>\{Agent,Connect}, a SHA256 file and one zip per
+    component, and checks the binaries for build-machine paths. It needs no elevation and can be re-run.
 
 .PARAMETER OutputRoot
-    Directory under which versioned artifacts are produced. Defaults to
-    <repo root>\artifacts.
+    Where versioned output is written. Defaults to <repo>\artifacts.
 
 .EXAMPLE
     .\deploy\package.ps1
@@ -67,7 +54,7 @@ function Publish-Component {
         Remove-Item -Recurse -Force -LiteralPath $DestinationDir
     }
 
-    & dotnet publish $ProjectPath -c Release -r win-x64 --self-contained false -o $DestinationDir
+    & dotnet publish $ProjectPath -c Release -r win-x64 --self-contained true -o $DestinationDir
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet publish failed for $ComponentName (exit code $LASTEXITCODE)."
     }
@@ -102,9 +89,7 @@ $connectDir = Join-Path $versionedRoot "Connect"
 Publish-Component -ProjectPath (Join-Path $repoRoot "src\SecureTunnel.Client.Agent\SecureTunnel.Client.Agent.csproj") -ComponentName "SecureTunnel.Client.Agent" -DestinationDir $agentDir
 Publish-Component -ProjectPath (Join-Path $repoRoot "src\SecureTunnel.Connect\SecureTunnel.Connect.csproj") -ComponentName "SecureTunnel.Connect" -DestinationDir $connectDir
 
-# Security check: confirm no development-only absolute path or key-shaped
-# string made it into the published output. This mirrors the manual check
-# performed in docs/c4-acceptance-report.md, now made repeatable.
+# Confirm no build-machine absolute path made it into the published output.
 Write-Host "Running packaging security checks..."
 $devPathPattern = [regex]::Escape($repoRoot.Path)
 $keyShapedPattern = "[A-Za-z0-9+/]{43}="
@@ -123,7 +108,6 @@ if ($securityIssues.Count -gt 0) {
     throw "Packaging security check failed - see errors above. Artifacts were NOT zipped."
 }
 Write-Host "Packaging security checks passed: no development-only paths found in published binaries."
-Write-Host "(Key-shaped-string scanning is documented as a manual step in docs/c4-acceptance-report.md - ASCII-only scanning here would false-negative on UTF-16 .NET string literals, so it is not repeated automatically; see that report for the manual methodology.)"
 
 # Zip + checksum each component (excludes .pdb - distributable artifact
 # only; .pdb files remain in the raw publish directory above for local

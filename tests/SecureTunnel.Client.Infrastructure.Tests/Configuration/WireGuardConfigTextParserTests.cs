@@ -25,6 +25,20 @@ public class WireGuardConfigTextParserTests
         """;
 
     [Fact]
+    public void Parse_SameConfigTwice_YieldsSameClientId_SoReimportReplacesInsteadOfOrphaning()
+    {
+        var parser = new WireGuardConfigTextParser();
+
+        var first = parser.Parse(ValidConfig());
+        var second = parser.Parse(ValidConfig());
+        var other = parser.Parse(ValidConfig().Replace("Address = 10.0.0.2/32", "Address = 10.0.0.9/32"));
+
+        Assert.Equal(first.Configuration!.ClientId, second.Configuration!.ClientId);
+        Assert.NotEqual(first.Configuration.ClientId, other.Configuration!.ClientId);
+        Assert.Matches("^[0-9a-f]{32}$", first.Configuration.ClientId);
+    }
+
+    [Fact]
     public void Parse_ValidConfig_ReturnsSuccess()
     {
         var parser = new WireGuardConfigTextParser();

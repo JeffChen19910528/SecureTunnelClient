@@ -23,6 +23,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         _viewModel = viewModel;
         DataContext = viewModel;
+        // Fill in the diagnostics (agent reachable, engine available) at startup instead of showing "No" until refreshed.
+        Loaded += async (_, _) => await viewModel.Diagnostics.RefreshAsync(string.Empty, CancellationToken.None);
     }
 
     private async void OnImportClick(object sender, RoutedEventArgs e)

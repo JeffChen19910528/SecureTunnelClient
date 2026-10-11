@@ -3,7 +3,7 @@ namespace SecureTunnel.Client.Core.Client;
 /// <summary>
 /// The interface the WPF UI depends on to reach privileged operations.
 /// Implementations must reach the privileged boundary only through the
-/// Named Pipe transport (see docs/ipc-protocol.md) - the UI itself must
+/// Named Pipe transport - the UI itself must
 /// never start a process, touch WireGuard, or read/write encrypted
 /// configuration storage directly. A DI-swappable fake implementation
 /// (<c>FakePrivilegedClientService</c>, in SecureTunnel.Client.TestSupport)

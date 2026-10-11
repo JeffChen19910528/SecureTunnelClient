@@ -181,7 +181,7 @@ public sealed class WireGuardConfigTextParser : IClientConfigurationParser
 
         var configuration = new ClientConfiguration
         {
-            ClientId = Guid.NewGuid().ToString("N"),
+            ClientId = DeriveClientId(publicKeyRaw!, endpoint!, addressRaw!),
             GatewayName = "Imported",
             GatewayEndpoint = endpoint!,
             InterfaceAddress = addressRaw!,
@@ -329,5 +329,15 @@ public sealed class WireGuardConfigTextParser : IClientConfigurationParser
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Stable id for a configuration: importing the same peer/endpoint/address again yields the same id, so it
+    /// replaces the stored entry (and reuses the same tunnel) instead of leaving an orphaned tunnel behind.
+    /// </summary>
+    private static string DeriveClientId(string peerPublicKey, string endpoint, string interfaceAddress)
+    {
+        var material = System.Text.Encoding.UTF8.GetBytes($"{peerPublicKey}|{endpoint}|{interfaceAddress}");
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(material))[..32].ToLowerInvariant();
     }
 }

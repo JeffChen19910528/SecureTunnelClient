@@ -13,7 +13,7 @@ using SecureTunnel.Client.Infrastructure.WireGuard.Embedded;
 var builder = Host.CreateApplicationBuilder(args);
 
 // The Windows Service Control Manager name; must match
-// deploy/install-service.ps1's -Name and docs/windows-service-installation.md.
+// deploy/install-service.ps1's -Name and the MSI's ServiceInstall.
 // Display name and description are SCM-level metadata set at install time
 // by that script (AddWindowsService's options do not expose them).
 builder.Services.AddWindowsService(options => options.ServiceName = "SecureTunnelAgent");

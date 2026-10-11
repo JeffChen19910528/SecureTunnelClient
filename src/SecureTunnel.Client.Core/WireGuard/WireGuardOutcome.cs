@@ -3,7 +3,7 @@ namespace SecureTunnel.Client.Core.WireGuard;
 /// <summary>
 /// Distinguishes the possible outcomes of a WireGuard client operation,
 /// including outcomes that originate from the Named Pipe transport and
-/// privileged service boundary (added in Phase C2). A process exit code
+/// privileged service boundary. A process exit code
 /// alone must never be mapped directly to <see cref="Connected"/> -
 /// connectivity must be corroborated via
 /// <see cref="IWireGuardClientService.GetStatusAsync"/>. Likewise, a

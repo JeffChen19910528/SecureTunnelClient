@@ -25,7 +25,7 @@ public class NamedPipePrivilegedClientProxyTests
         await PipeFraming.WriteFrameAsync(server, JsonSerializer.Serialize(response, PipeJsonOptions.Default), CancellationToken.None);
     }
 
-    [Fact]
+    [PipeFact]
     public async Task Connect_Success()
     {
         var ready = new TaskCompletionSource();
@@ -42,7 +42,7 @@ public class NamedPipePrivilegedClientProxyTests
         Assert.Equal("Connecting", result.ObservedState?.ToString());
     }
 
-    [Fact]
+    [PipeFact]
     public async Task Disconnect_Success()
     {
         var ready = new TaskCompletionSource();
@@ -58,7 +58,7 @@ public class NamedPipePrivilegedClientProxyTests
         Assert.True(result.Success);
     }
 
-    [Fact]
+    [PipeFact]
     public async Task Status_Success()
     {
         var ready = new TaskCompletionSource();
@@ -75,7 +75,7 @@ public class NamedPipePrivilegedClientProxyTests
         Assert.Equal(Core.Models.ClientState.Connected, result.ObservedState);
     }
 
-    [Fact]
+    [PipeFact]
     public async Task InvalidConfiguration_Propagates()
     {
         var ready = new TaskCompletionSource();
@@ -92,7 +92,7 @@ public class NamedPipePrivilegedClientProxyTests
         Assert.Equal("InvalidConfiguration", result.ErrorCode);
     }
 
-    [Fact]
+    [PipeFact]
     public async Task ServiceNotRunning_ReturnsServiceUnavailable()
     {
         // No fake server is started at all - this is the "service isn't

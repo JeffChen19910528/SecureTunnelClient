@@ -2,148 +2,101 @@
 
 **English** | [繁體中文](README.zh-TW.md)
 
-Windows client for the SecureTunnel private-resource VPN access platform. Lets a user import a Gateway-issued WireGuard configuration, store it securely, and connect to a SecureTunnel Gateway.
+SecureTunnel Connect is a Windows VPN client for a [SecureTunnel Gateway](https://github.com/JeffChen19910528/SecureTunnelGateway). Import the WireGuard configuration your Gateway issued, click **Connect**, and reach the private resources you are allowed to use. Everything it needs is built in: you do **not** have to install WireGuard for Windows or any other VPN software.
 
-> **Status: verified end to end.** A Windows client running the built-in WireGuard engine connected to a real SecureTunnel Gateway (WireGuard + nftables on Linux): handshake completed, the authorized resource was reachable (HTTP 200), an unauthorized resource was blocked, and after Disconnect access was cut off and the virtual adapter removed. This was repeated with the Agent installed as the `SecureTunnelAgent` Windows Service via `deploy\install-service.ps1` (running from `C:\Program Files\SecureTunnel\Agent`). Not yet exercised: the WPF window driven by hand and the WiX MSI.
+- One-click connect / disconnect with a live status ("Connected" only after a real handshake)
+- Built-in WireGuard engine (virtual adapter included)
+- Imported keys are stored encrypted (Windows DPAPI) and are never shown again
+- Only the networks your Gateway allows go through the tunnel
+- Runs in the system tray; English and Traditional Chinese interface
 
-## Built-in WireGuard engine (no separate install)
+## Requirements
 
-The Agent now bundles `wireguard.dll` (wireguard-nt 0.10.1, amd64, see `src/SecureTunnel.Client.Agent/native/win-x64/WIREGUARD-NT-LICENSE.txt`) and drives it in-process, so **WireGuard for Windows does not need to be installed**. The virtual network adapter driver is inside that DLL; the Agent (a Windows Service running elevated) creates the adapter on Connect and removes it on Disconnect or if the Agent exits. IP address, routes and DNS are applied with the OS-provided `netsh.exe`.
+- Windows 10 / 11, 64-bit
+- A WireGuard client configuration (`.conf`) issued by your Gateway administrator
+- Administrator rights **once**, to install (the background service creates the virtual network adapter)
+- Nothing else: the installer already contains the .NET runtime and the WireGuard engine
 
-- Default engine: embedded. To use an installed WireGuard for Windows instead, set `Tunnel__Engine=WireGuardExe` for the service.
-- Limits: 64-bit Windows only; `AllowedIPs` of `0.0.0.0/0` / `::/0` (full tunnel) are rejected for now - list the protected networks instead.
-- Verified: struct layout and status mapping by unit tests, and the DLL loads and resolves on this machine. **Not yet verified end to end against a Gateway**, because that needs an elevated session (adapter creation returns Win32 error 5 without it).
+## Install
 
-## Usage
+**With the installer (recommended).** Build it as described under [Build from source](#build-from-source), then run `SecureTunnelConnect-Setup-<version>-win-x64.exe` (it asks for administrator rights). It installs to `C:\Program Files\SecureTunnel`:
 
-**What you need**: 64-bit Windows 10/11, the .NET 10 runtime, and a WireGuard client configuration issued by your Gateway (`.conf`). You do **not** need to install WireGuard for Windows.
+- the **SecureTunnel Agent** Windows service (starts automatically, runs in the background), and
+- the **SecureTunnel Connect** app, with a Start menu shortcut and an entry in *Settings > Apps*.
 
-1. **Start the Agent (administrator, once per boot).** The Agent creates the virtual network adapter, so it must be elevated.
-   - Installed as a service: `.\deploy\package.ps1`, then in an elevated PowerShell `.\deploy\install-service.ps1 -ExecutablePath "<path>\SecureTunnel.Client.Agent.exe"` and `Start-Service SecureTunnelAgent`.
-   - Just trying it out: in an elevated PowerShell run `SecureTunnel.Client.Agent.exe` and keep the window open.
-2. **Run SecureTunnel Connect** (normal user, no elevation). Import the `.conf` file; the summary (gateway, address, allowed networks) is shown. The private key is stored encrypted (DPAPI) by the Agent and never shown again.
-3. **Connect.** The state goes Connecting -> Awaiting handshake -> **Connected**. "Connected" appears only after a real WireGuard handshake.
-4. **Use the protected resources** (for example `http://10.20.0.5:8443/`). Only networks listed in `AllowedIPs` go through the tunnel; the Gateway still enforces which resources you may reach.
-5. **Disconnect** when done. This removes the virtual adapter and its routes. Closing the app does not disconnect; stopping the Agent does.
+Run it again with a newer version to upgrade; imported configurations are kept. Silent install: `SecureTunnelConnect-Setup-<version>-win-x64.exe /silent`.
 
-Configuration rules: `AllowedIPs` must list the protected networks (a full tunnel `0.0.0.0/0` is rejected); `Endpoint` must be reachable over UDP from this PC.
+**Without the installer.** After running `deploy\package.ps1`, copy `artifacts\<version>\Agent` to `C:\Program Files\SecureTunnel\Agent` and, from an administrator PowerShell:
 
-| Message | Meaning / fix |
+```powershell
+.\deploy\install-service.ps1 -ExecutablePath "C:\Program Files\SecureTunnel\Agent\SecureTunnel.Client.Agent.exe"
+Start-Service SecureTunnelAgent
+```
+
+Then run `SecureTunnel.Connect.exe` from `artifacts\<version>\Connect`.
+
+## Use
+
+1. Open **SecureTunnel Connect** (normal user, no administrator rights needed).
+2. Click **Import Configuration...** and choose the `.conf` file from your Gateway administrator. The Gateway address, your tunnel address and the allowed networks are shown. Importing the same file again simply replaces it.
+3. Click **Connect**. The status goes *Awaiting handshake* and then **Connected**.
+4. Use the protected resources as usual (browser, database client, ...). Which resources you may reach is decided by the Gateway.
+5. Click **Disconnect** when you are done. Closing the window only minimizes it to the tray; the VPN stays connected until you disconnect.
+
+The **Language** button switches between English and Traditional Chinese. **Refresh Diagnostics** and **Copy to Clipboard** produce a short, secret-free report you can send to your administrator.
+
+## Configuration file
+
+The file is a standard WireGuard client configuration:
+
+```ini
+[Interface]
+PrivateKey = <your private key>
+Address = 10.250.0.10/32
+DNS = 10.250.0.1            # optional
+MTU = 1380                  # optional
+
+[Peer]
+PublicKey = <Gateway public key>
+AllowedIPs = 10.20.0.0/24, 10.250.0.0/24
+Endpoint = gateway.example.com:51820
+PersistentKeepalive = 25    # optional
+```
+
+- `PublicKey`, `Endpoint` and `AllowedIPs` are required; `AllowedIPs` is never filled in for you.
+- `AllowedIPs` must list the protected networks. A full tunnel (`0.0.0.0/0` or `::/0`) is not supported and is rejected.
+- `Endpoint` must be reachable from your PC over UDP.
+
+## Troubleshooting
+
+| What you see | What to do |
 |---|---|
-| "service is not running" | Start the Agent (step 1). |
-| Access denied | Use an Agent built after the Named Pipe ACL fix (older builds blocked every user on the pipe). |
-| "built-in WireGuard engine is missing" | `wireguard.dll` must sit next to the Agent exe; 64-bit Windows only. |
-| "Administrator permission is required" | The Agent is not elevated. |
-| Stays at "Awaiting handshake" | Wrong endpoint/port, UDP blocked, or the Gateway does not know your public key. |
+| "The SecureTunnel Connect service is not running" | Start it: `Start-Service SecureTunnelAgent` (administrator). |
+| Stays at **Awaiting handshake** | Check the `Endpoint` address and port, that UDP is not blocked by a firewall, and that the Gateway administrator registered your public key. |
+| "Administrator permission is required" | The service is not running as the system service; reinstall it with the installer. |
+| "The built-in WireGuard engine is missing" | `wireguard.dll` must be in the same folder as `SecureTunnel.Client.Agent.exe`; only 64-bit Windows is supported. |
+| Connected, but a resource is unreachable | The Gateway only allows the resources your administrator granted. Ask them to check your access. |
+| Access to the service was denied | Reinstall the current version. |
 
-## What problem this solves
+## Uninstall
 
-SecureTunnel's product principle: *only users who connect through a SecureTunnel Gateway and possess an authorized Peer configuration should be able to access protected resources allowed by Gateway policies.* The Gateway server already enforces this on the network side (WireGuard + nftables default-deny). SecureTunnel Connect is the piece that lets a non-technical Windows user actually hold and use an authorized Peer configuration, without needing to understand WireGuard, DPAPI, or run anything as administrator just to see the app.
+Remove **SecureTunnel Connect** from *Settings > Apps*, or run `"C:\Program Files\SecureTunnel\Setup\SecureTunnelSetup.exe" /uninstall` (add `/removedata` to also delete the imported configurations, `/silent` for no prompts). Imported configurations are kept in `%ProgramData%\SecureTunnel\Agent` so a reinstall does not need a new import; delete that folder to remove them. Without the installer: `.\deploy\uninstall-service.ps1` (add `-RemoveData` to delete the configurations).
 
-## Roles
+## Security
 
-| Term | Meaning |
-|---|---|
-| Gateway | The SecureTunnel Gateway Server (separate repository) that terminates WireGuard tunnels and enforces access policy. |
-| Client / Peer | A single authorized WireGuard configuration issued by a Gateway, imported into this app. |
-| SecureTunnel Connect (this repo) | The unelevated WPF app a user runs day-to-day. |
-| Privileged boundary (`SecureTunnel.Client.Agent`) | The `SecureTunnelAgent` Worker Service, reached only via a Named Pipe, through which the UI performs Connect/Disconnect/Status/ValidateConfiguration - see `docs/windows-service-boundary.md` and `docs/ipc-protocol.md`. |
+See [docs/security.md](docs/security.md).
 
-## Architecture at a glance
+## Build from source
 
-```
-SecureTunnel.Client.Core            domain models, interfaces, state machine, IPC wire types (no I/O)
-        ^
-SecureTunnel.Client.Infrastructure  DPAPI storage, WireGuard connection engine, config parser, Named Pipe client proxy
-        ^
-SecureTunnel.Client.Agent           Worker Service host ("SecureTunnelAgent"): privileged operation contract + Named Pipe server
-        ^
-SecureTunnel.Connect                WPF UI (unelevated): import, connect/disconnect, diagnostics, system tray
-```
+Requires Windows and the .NET 10 SDK. No other tool (no installer toolkit) is needed.
 
-Full diagram and rationale: `docs/architecture.md`.
-
-## Current development status
-
-- [x] Solution/project scaffolding matching the layout above, shared versioning (`Directory.Build.props`, currently `0.6.0`)
-- [x] Domain models, validation, and diagnostics types (`SecureTunnel.Client.Core`)
-- [x] Client state machine with `Validating`/`InterfaceActive`/`AwaitingHandshake`/`ServiceUnavailable` states - `Connected` reachable only after a verified handshake, hardened against repeated-Connect/repeated-Disconnect conflicts (Phase C5)
-- [x] Complete WireGuard `[Interface]`+`[Peer]` configuration parser and deterministic generator (mandatory peer public key, mandatory validated endpoint, AllowedIPs never defaulted)
-- [x] DPAPI-encrypted (`LocalMachine` scope), atomic, fail-closed configuration storage - real same-identity cross-scope compatibility verified (Phase C4)
-- [x] WireGuard connection engine: real interface/handshake status parsing (`WireGuardDumpParser`), per-operation timeout with process-tree kill (real-process-verified), idempotent tunnel-scoped disconnect, stdout/stderr redaction, temp-file cleanup verified on the timeout path
-- [x] Real .NET 10 Worker Service host (`SecureTunnel.Client.Agent`, service name `SecureTunnelAgent`)
-- [x] Hardened Named Pipe IPC transport: fixed pipe name, framed JSON, size limits, timeouts, closed operation allow-list, `BUILTIN\Users`-scoped ACL denying Everyone/Anonymous/Network - see `docs/ipc-protocol.md`
-- [x] WPF: configuration import (file picker, validation display, configuration summary), Connect/Disconnect/Refresh, diagnostics panel, system tray (minimize/restore/exit, never touches the Agent connection)
-- [x] A 14-scenario named WireGuard test double (`FakeWireGuardClientService`) for standalone client verification without a real Gateway or WireGuard install (Phase C5)
-- [x] Windows Service install/uninstall PowerShell scripts - idempotent version/path detection, restricted-ACL data-directory provisioning, explicit recovery config, opt-in data retention on uninstall (Phase C6) - written and syntax-checked, **not executed**
-- [x] Repeatable local packaging (`deploy\package.ps1`) - **actually run** this phase, producing real versioned/checksummed artifacts and catching a real embedded-developer-path defect (fixed) - see `docs/c6-packaging-report.md`
-- [x] 168/168 automated tests passing, including real in-process Named Pipe round trips, a real-child-process timeout/kill test, and real DPAPI round trips - re-confirmed clean across 3 consecutive full-suite runs after fixing a real load-dependent test flakiness defect in Phase C7 (`docs/testing-guide.md`)
-- [x] Real Windows acceptance environment tooling (Phase C7-ENV): a non-destructive readiness probe (`deploy/check-c7-environment.ps1`, real-executed - 13/16 READY, 3 NOT READY on this machine), a sanitized read-only evidence harness (`deploy/collect-c7-evidence.ps1`), a manual elevated-setup guide, and 16/16 real Pester tests covering the new tooling (which themselves found and fixed two real PowerShell defects, including a deny-only-Administrators-token detection bug) - see `docs/c7-environment-readiness.md`. **Does not replace real C7 acceptance**, which remains Blocked.
-- [ ] Actually-installed Windows Service - **Blocked** (no elevated access in this environment; see `docs/windows-service-installation.md`)
-- [ ] Cross-identity Named Pipe access-denied test - **Blocked** (no second Windows identity available)
-- [x] Real WireGuard connectivity - verified against a real Gateway with the built-in engine (see Usage); a Named Pipe ACL bug that locked out every user was fixed along the way
-- [ ] Tray icon / file dialog / clipboard UI automation - **Blocked** (requires an interactive Windows session)
-- [ ] Production installer (WiX MSI) - **Deferred**, evaluated and recommended, not built - see `docs/installer-technology-assessment.md`
-
-## Project structure
-
-```
-SecureTunnelClient/
-├── SecureTunnelClient.slnx
-├── Directory.Build.props                   shared version + build-path hygiene (PathMap)
-├── deploy/
-│   ├── package.ps1                         repeatable local packaging - actually run, see docs/c6-packaging-report.md
-│   ├── install-service.ps1                 not executed - see docs/windows-service-installation.md
-│   ├── uninstall-service.ps1
-│   ├── C7EnvironmentChecks.psm1            readiness-check helpers - real-executed, 16 Pester tests
-│   ├── check-c7-environment.ps1            non-destructive readiness probe - real-executed
-│   ├── collect-c7-evidence.ps1             read-only, sanitized evidence-collection harness for a future C7 rerun
-│   └── tests/
-│       └── C7EnvironmentChecks.Tests.ps1   16/16 passing (Pester 3.4.0)
-├── src/
-│   ├── SecureTunnel.Connect/               WPF application (import, connect, diagnostics, tray)
-│   ├── SecureTunnel.Client.Core/           domain models, interfaces, IPC wire protocol types
-│   ├── SecureTunnel.Client.Agent/          Worker Service host: privileged operation contract + Named Pipe server
-│   └── SecureTunnel.Client.Infrastructure/ Windows/WireGuard integration abstractions + Named Pipe client proxy
-├── tests/
-│   ├── SecureTunnel.Client.Core.Tests/
-│   ├── SecureTunnel.Client.Agent.Tests/
-│   ├── SecureTunnel.Client.Infrastructure.Tests/
-│   ├── SecureTunnel.Client.Connect.Tests/  WPF ViewModel tests
-│   └── SecureTunnel.Client.TestSupport/    shared fakes/test doubles
-└── docs/
-    ├── architecture.md
-    ├── security-model.md
-    ├── configuration-format.md
-    ├── windows-service-boundary.md
-    ├── windows-service-installation.md
-    ├── installer-technology-assessment.md
-    ├── deployment-guide.md
-    ├── ipc-protocol.md
-    ├── wireguard-connection-lifecycle.md
-    ├── diagnostics.md
-    ├── testing-guide.md
-    ├── c4-acceptance-report.md
-    ├── c5-standalone-client-acceptance.md
-    ├── c6-packaging-report.md
-    ├── c7-acceptance-report.md
-    ├── c7-environment-readiness.md
-    ├── c7-elevated-setup-guide.md
-    ├── c7-evidence-collection.md
-    ├── c7-cleanup-guide.md
-    ├── c7-env-report.md
-    ├── final-client-closeout-report.md
-    └── roadmap.md
-```
-
-## Building, testing, and packaging
-
-Requires the .NET 10 SDK on Windows.
-
-```
+```powershell
 dotnet build SecureTunnelClient.slnx
-dotnet test SecureTunnelClient.slnx
-.\deploy\package.ps1
+dotnet test  SecureTunnelClient.slnx
+.\deploy\package.ps1       # artifacts\<version>\{Agent,Connect}, checksums and zips (self-contained)
+.\deploy\build-setup.ps1   # artifacts\<version>\SecureTunnelConnect-Setup-<version>-win-x64.exe
 ```
 
-See `docs/testing-guide.md` for the actual test results and `docs/c6-packaging-report.md` for the actual packaging results against this codebase.
+The tests include UI automation (`SecureTunnel.Client.UiTests`) that opens the app and needs an interactive desktop. A few pipe tests are skipped while the SecureTunnel Agent service is running on the same PC.
+
+The bundled `wireguard.dll` is [wireguard-nt](https://www.wireguard.com/) (WireGuard LLC); its license is in `src/SecureTunnel.Client.Agent/native/win-x64/WIREGUARD-NT-LICENSE.txt`.

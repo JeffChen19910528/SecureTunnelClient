@@ -5,22 +5,13 @@ using SecureTunnel.Client.Core.WireGuard;
 namespace SecureTunnel.Client.Agent.Service;
 
 /// <summary>
-/// The privileged operation boundary implementation. This is where WPF's
-/// requests actually reach WireGuard/DPAPI code - it is the piece that
-/// must eventually run inside the elevated Windows Service (see
-/// docs/windows-service-boundary.md's Service Identity Rationale for why
-/// LocalSystem was chosen). This phase hosts it inside a real .NET 10
-/// Worker Service (<see cref="SecureTunnel.Client.Agent"/>'s
-/// <c>Program.cs</c>); actually installing that service under the Windows
-/// Service Control Manager has not been performed - see
-/// docs/windows-service-installation.md.
+/// The privileged operation boundary implementation. This is where requests from the desktop app reach the
+/// WireGuard engine and the encrypted configuration store. It runs inside the elevated Windows Service
+/// (LocalSystem), reached only via the Named Pipe transport.
 ///
-/// Security boundary: WPF must never construct this type directly with
-/// privileged credentials, and must never call
-/// <see cref="IWireGuardClientService"/> or <see cref="IClientConfigurationStore"/>
-/// itself. All privileged access flows through the four methods on
-/// <see cref="IPrivilegedOperationHandler"/>, reached only via the Named
-/// Pipe transport. See docs/windows-service-boundary.md and docs/ipc-protocol.md.
+/// Security boundary: the desktop app never constructs this type, and never calls
+/// <see cref="IWireGuardClientService"/> or <see cref="IClientConfigurationStore"/> itself. All privileged
+/// access flows through the methods on <see cref="IPrivilegedOperationHandler"/>.
 /// </summary>
 public sealed class ClientAgentServiceFoundation : IPrivilegedOperationHandler
 {

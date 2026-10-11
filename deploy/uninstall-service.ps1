@@ -1,31 +1,16 @@
 <#
 .SYNOPSIS
-    Uninstalls the SecureTunnel Agent Windows Service.
+    Removes the SecureTunnel Agent Windows Service.
 
 .DESCRIPTION
-    Stops (if running) and removes the "SecureTunnelAgent" Windows
-    Service using explicit cmdlet parameters - never a concatenated
-    sc.exe command-line string.
+    Stops (if running) and removes the "SecureTunnelAgent" service. By default the stored configurations in
+    %ProgramData%\SecureTunnel\Agent are kept so a reinstall does not require importing again. Only the service
+    is touched: no network adapter or firewall rule is changed.
 
-    Data retention (Phase C6): by default, this script NEVER deletes
-    %ProgramData%\SecureTunnel\Agent (the DPAPI-protected configuration
-    store) - user configuration is preserved across an uninstall unless
-    -RemoveData is explicitly passed. This matches "do not silently
-    delete user configuration" and "uninstall does not delete unrelated
-    files" from docs/deployment-guide.md. This script never touches any
-    WireGuard tunnel, network adapter, or firewall rule - it only
-    interacts with the Windows Service Control Manager and (optionally,
-    with -RemoveData) its own data directory.
-
-    THIS SCRIPT HAS NOT BEEN EXECUTED AS PART OF ANY PHASE THROUGH C6 (no
-    service has ever been installed in this environment - see
-    install-service.ps1's header). It requires an elevated
-    (Administrator) PowerShell session.
+    Run from an elevated (Administrator) PowerShell.
 
 .PARAMETER RemoveData
-    If specified, also deletes %ProgramData%\SecureTunnel\Agent (all
-    stored configurations) after the service is removed. Off by default
-    - an uninstall alone preserves user data for a possible reinstall.
+    Also delete %ProgramData%\SecureTunnel\Agent (all stored configurations).
 
 .EXAMPLE
     .\uninstall-service.ps1
