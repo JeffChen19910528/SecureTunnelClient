@@ -18,6 +18,9 @@
   <Folder Name="/tests/SecureTunnel.Client.Connect.Tests/">
     <Project Path="tests/SecureTunnel.Client.Connect.Tests/SecureTunnel.Client.Connect.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/SecureTunnel.Client.UiTests/">
+    <Project Path="tests/SecureTunnel.Client.UiTests/SecureTunnel.Client.UiTests.csproj" />
+  </Folder>
   <Folder Name="/tests/SecureTunnel.Client.TestSupport/">
     <Project Path="tests/SecureTunnel.Client.TestSupport/SecureTunnel.Client.TestSupport.csproj" />
   </Folder>

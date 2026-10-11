@@ -48,10 +48,18 @@ Phase C4 added one regression test that corrected a Phase C3 documentation assum
 - **No real Windows Service was installed.** `SecureTunnel.Client.Agent` was never registered via `New-Service`/`sc.exe`; every test runs its hosted-service logic as an ordinary process. `deploy/install-service.ps1`/`uninstall-service.ps1` were only syntax-checked (`[System.Management.Automation.Language.Parser]::ParseFile`), never executed - see `windows-service-installation.md`.
 - **No real cross-identity access-denied scenario was tested.** `PipeSecurityFactoryTests` only inspects the ACL object `PipeSecurityFactory.Create()` builds; no test connects as a genuinely different Windows identity and observes a denial.
 - **No real WireGuard connectivity was tested.** All WireGuard process interaction in `WireGuardClientServiceTests` goes through `FakeProcessRunner`/`FakeWireGuardClientService` (both explicitly labeled as test doubles). No test in this repository has launched the real `wireguard.exe` or established a tunnel - see `wireguard-connection-lifecycle.md`.
-- **No WPF UI automation.** `TrayIconService` (WinForms `NotifyIcon`) and the `Microsoft.Win32.OpenFileDialog` file picker are not exercised by any automated test - they require an interactive Windows session. Verified only by `dotnet build` succeeding and manual manifest inspection (no `requireAdministrator`).
+- **Tray context menu not automated** (the rest of the WPF UI is now covered by `SecureTunnel.Client.UiTests`, see below). `TrayIconService` (WinForms `NotifyIcon`) and the `Microsoft.Win32.OpenFileDialog` file picker are not exercised by any automated test - they require an interactive Windows session. Verified only by `dotnet build` succeeding and manual manifest inspection (no `requireAdministrator`).
 - **No Clipboard interaction was tested.** `DiagnosticsViewModel.CopyToClipboardCommand` (which calls `System.Windows.Clipboard`) is not invoked by `DiagnosticsViewModelTests` - only the underlying `BuildClipboardText()` method is tested directly, since `Clipboard` requires a UI-thread/STA context unreliable in headless test runs.
 
 **Blocked, not attempted as automated tests this phase** (would require infrastructure/privileges not available here, or are inherently manual/CI-environment acceptance steps): installing and uninstalling a real Windows Service; a real second-identity pipe access-denied test; real `wireguard.exe` connectivity end-to-end; interactive WPF UI automation (tray icon, file dialog, clipboard).
+
+## Real UI automation (`SecureTunnel.Client.UiTests`)
+
+**Implemented & Passed (6/6, two consecutive runs on this development machine):** FlaUI (UIA3) tests launch the real, unelevated `SecureTunnel.Connect.exe` with `SECURETUNNEL_UI_LANGUAGE=en` and drive it: expected controls present; Refresh Diagnostics with no Agent reports `Agent reachable: False`; the real `OpenFileDialog` import flow (with no Agent running, a user-safe error is shown, no configuration summary appears, and neither the private nor peer key appears anywhere in the UI); Copy to Clipboard puts diagnostics on the real clipboard without secrets; closing the window hides to the tray and the process keeps running; the English/Chinese toggle switches and restores (the user's saved language preference file is backed up and restored by the test).
+
+Requires an interactive desktop session; `[InteractiveFact]` reports Skipped (Not Tested, never Passed) when none exists. Tests use UIA patterns and a `WM_COMMAND`/`IDOK` post to the dialog only - never global keyboard input.
+
+**Still not tested:** the tray icon's Restore/Exit context menu (notification-area UIA is unreliable), and a *successful* import (validation is performed by the Agent, which is not installed).
 
 ## Fakes and mocks
 

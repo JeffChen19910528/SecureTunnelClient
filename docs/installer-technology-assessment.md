@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implemented:** a PowerShell-based deployment approach (packaging + service install/uninstall scripts). **Deferred:** a WiX MSI, evaluated and recommended as the eventual production installer but not built this phase (see rationale below).
+**Implemented:** a PowerShell-based deployment approach (packaging + service install/uninstall scripts). **Built, not install-tested:** a WiX 5 MSI (`installer/SecureTunnel.Installer`, built by `deploy/build-msi.ps1` from the `deploy/package.ps1` output) was compiled successfully and passes WiX's built-in ICE validation, but it has **never been installed** (installing requires elevation). Service registration, recovery actions, data-directory ACL, upgrade and uninstall behavior are therefore Implemented but Not Tested. The PowerShell scripts remain the documented fallback.
 
 ## Options compared
 

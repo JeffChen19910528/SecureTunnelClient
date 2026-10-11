@@ -1,0 +1,96 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <!-- UpgradeCode must never change across versions of this product. -->
+  <Package Name="SecureTunnel Connect"
+           Manufacturer="SecureTunnel"
+           Version="$(ProductVersion)"
+           UpgradeCode="6B8E2C4A-5F1D-4A39-9C7E-2D3B8A1F0E54"
+           Scope="perMachine"
+           InstallerVersion="500">
+
+    <!-- Atomic upgrade: replaces the old version (stopping/removing the service first). -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of SecureTunnel Connect is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="Main" Title="SecureTunnel Connect" Level="1">
+      <ComponentGroupRef Id="AgentFiles" />
+      <ComponentGroupRef Id="AgentService" />
+      <ComponentGroupRef Id="ConnectFiles" />
+      <ComponentRef Id="DataDirectory" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CompanyDir" Name="SecureTunnel">
+        <Directory Id="AgentDir" Name="Agent" />
+        <Directory Id="ConnectDir" Name="Connect" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="CommonAppDataFolder">
+      <Directory Id="DataCompanyDir" Name="SecureTunnel">
+        <Directory Id="DataAgentDir" Name="Agent">
+          <Directory Id="DataConfigsDir" Name="configs" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder" />
+  </Fragment>
+
+  <Fragment>
+    <!-- Everything except the service executable (it carries ServiceInstall below). -->
+    <ComponentGroup Id="AgentFiles" Directory="AgentDir">
+      <Files Include="$(PublishRoot)Agent\**">
+        <Exclude Files="$(PublishRoot)Agent\SecureTunnel.Client.Agent.exe" />
+        <Exclude Files="$(PublishRoot)Agent\**\*.pdb" />
+      </Files>
+    </ComponentGroup>
+
+    <ComponentGroup Id="AgentService" Directory="AgentDir">
+      <Component Id="AgentExe">
+        <File Id="AgentExeFile" Source="$(PublishRoot)Agent\SecureTunnel.Client.Agent.exe" KeyPath="yes" />
+        <!-- Name must match Program.cs's AddWindowsService call. Not auto-started: start is an explicit operator action, as in install-service.ps1. -->
+        <ServiceInstall Id="SecureTunnelAgentService"
+                        Name="SecureTunnelAgent"
+                        DisplayName="SecureTunnel Agent"
+                        Description="Privileged WireGuard connection engine for SecureTunnel Connect. Communicates with the SecureTunnel Connect desktop app only over a restricted local Named Pipe."
+                        Type="ownProcess"
+                        Start="auto"
+                        ErrorControl="normal"
+                        Account="LocalSystem">
+          <!-- Restart on the first two failures, no action on the third (matches install-service.ps1). -->
+          <util:ServiceConfig FirstFailureActionType="restart"
+                              SecondFailureActionType="restart"
+                              ThirdFailureActionType="none"
+                              RestartServiceDelayInSeconds="5"
+                              ResetPeriodInDays="1" />
+        </ServiceInstall>
+        <ServiceControl Id="SecureTunnelAgentControl" Name="SecureTunnelAgent" Stop="both" Remove="uninstall" Wait="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="ConnectFiles" Directory="ConnectDir">
+      <Files Include="$(PublishRoot)Connect\**">
+        <Exclude Files="$(PublishRoot)Connect\SecureTunnel.Connect.exe" />
+        <Exclude Files="$(PublishRoot)Connect\**\*.pdb" />
+      </Files>
+      <Component Id="ConnectExe">
+        <File Id="ConnectExeFile" Source="$(PublishRoot)Connect\SecureTunnel.Connect.exe" KeyPath="yes">
+          <Shortcut Id="ConnectShortcut" Directory="ProgramMenuFolder" Name="SecureTunnel Connect" WorkingDirectory="ConnectDir" Advertise="yes" />
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <!-- Restricted to SYSTEM + Administrators, like install-service.ps1. Left in place on uninstall (user data is retained). -->
+    <Component Id="DataDirectory" Directory="DataConfigsDir" Guid="3F7A91D2-84C6-4B1E-A5D0-7E2C9B6F1A38" Permanent="yes">
+      <CreateFolder>
+        <util:PermissionEx User="SYSTEM" GenericAll="yes" />
+        <util:PermissionEx User="Administrators" GenericAll="yes" />
+      </CreateFolder>
+    </Component>
+
+  </Fragment>
+</Wix>
